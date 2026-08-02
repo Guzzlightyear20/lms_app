@@ -35,8 +35,16 @@ export const setTenantClaims = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
   }
 
+  const token = context.auth.token as Record<string, unknown>;
+  if (typeof token.tenantId !== 'string' || typeof token.role !== 'string') {
+    throw new functions.https.HttpsError(
+      'failed-precondition',
+      'Caller is missing tenantId/role claims',
+    );
+  }
+  const callerClaims = { tenantId: token.tenantId, role: token.role as Role };
+
   const admin = await import('firebase-admin');
-  const callerClaims = context.auth.token as unknown as { tenantId: string; role: Role };
 
   return assignTenantClaims(admin.auth(), {
     callerClaims,

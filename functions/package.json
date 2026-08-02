@@ -7,6 +7,9 @@
     "test": "vitest run",
     "build": "tsc"
   },
+  "engines": {
+    "node": "20"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -16,8 +19,8 @@
     "firebase-functions": "^7.3.2"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
-    "typescript": "^7.0.2",
+    "@types/node": "^20.19.0",
+    "typescript": "^5.4.0",
     "vitest": "^4.1.10"
   }
 }
