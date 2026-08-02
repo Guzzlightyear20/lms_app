@@ -35,7 +35,7 @@ describe('tenant isolation', () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'tenants/tenant-b/courses/course-1'), {
         title: 'Secret course',
-        published: true,
+        published: false,
       });
     });
 
@@ -126,5 +126,54 @@ describe('tenant isolation', () => {
       { title: 'Cross-tenant hack', published: false },
     );
     await assertFails(blockedWrite);
+  });
+
+  it('allows an unauthenticated visitor to read a published course', async () => {
+    const anonymous = testEnv.unauthenticatedContext();
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'tenants/tenant-a/courses/course-5'), {
+        title: 'Public course',
+        published: true,
+      });
+    });
+
+    const allowedRead = getDoc(doc(anonymous.firestore(), 'tenants/tenant-a/courses/course-5'));
+    await assertSucceeds(allowedRead);
+  });
+
+  it('denies an unauthenticated visitor from reading an unpublished course', async () => {
+    const anonymous = testEnv.unauthenticatedContext();
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'tenants/tenant-a/courses/course-6'), {
+        title: 'Draft course',
+        published: false,
+      });
+    });
+
+    const blockedRead = getDoc(doc(anonymous.firestore(), 'tenants/tenant-a/courses/course-6'));
+    await assertFails(blockedRead);
+  });
+
+  it('denies a student from writing certificateUrl directly on their own progress', async () => {
+    const tenantAStudent = testEnv.authenticatedContext('student-a', {
+      tenantId: 'tenant-a',
+      role: 'student',
+    });
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), 'tenants/tenant-a/students/student-a/progress/course-1'),
+        { courseId: 'course-1', lessonsCompleted: [], quizScores: {}, certificateUrl: null },
+      );
+    });
+
+    const forgedWrite = setDoc(
+      doc(tenantAStudent.firestore(), 'tenants/tenant-a/students/student-a/progress/course-1'),
+      { courseId: 'course-1', lessonsCompleted: [], quizScores: {}, certificateUrl: 'https://evil.example/fake.pdf' },
+      { merge: true },
+    );
+    await assertFails(forgedWrite);
   });
 });

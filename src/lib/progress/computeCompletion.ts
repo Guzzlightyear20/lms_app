@@ -5,6 +5,10 @@ export function isCourseComplete(
   progress: Progress,
   totalLessonIds: string[],
 ): boolean {
+  if (totalLessonIds.length === 0) {
+    return false;
+  }
+
   const allLessonsDone = totalLessonIds.every((id) =>
     progress.lessonsCompleted.includes(id),
   );

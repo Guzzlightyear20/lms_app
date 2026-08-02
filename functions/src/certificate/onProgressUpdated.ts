@@ -82,7 +82,7 @@ export const onProgressUpdated = functionsV1.firestore
         },
       },
       {
-        course: courseSnap.data() as Course,
+        course: { ...(courseSnap.data() as Omit<Course, 'id'>), id: courseId },
         progress: progressData as Progress,
         totalLessonIds: lessonIds,
         studentName: studentSnap.data()?.name ?? 'Estudiante',

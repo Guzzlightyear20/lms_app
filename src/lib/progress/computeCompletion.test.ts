@@ -55,4 +55,14 @@ describe('isCourseComplete', () => {
     };
     expect(isCourseComplete(course, progress, totalLessonIds)).toBe(true);
   });
+
+  it('is false when there are no lessons at all, even with no completions required', () => {
+    const progress: Progress = {
+      courseId: 'course-1',
+      lessonsCompleted: [],
+      quizScores: {},
+      certificateUrl: null,
+    };
+    expect(isCourseComplete(baseCourse, progress, [])).toBe(false);
+  });
 });
