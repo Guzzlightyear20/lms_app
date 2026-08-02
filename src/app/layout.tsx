@@ -1,3 +1,5 @@
+import { AuthProvider } from '@/lib/auth/AuthProvider'
+
 export const metadata = {
   title: 'LMS SaaS',
   description: 'Multi-tenant course platform',
@@ -10,7 +12,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }
