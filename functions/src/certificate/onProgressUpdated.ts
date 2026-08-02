@@ -1,5 +1,7 @@
 // functions/src/certificate/onProgressUpdated.ts
 import * as functionsV1 from 'firebase-functions/v1';
+import { getFirestore, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { isCourseComplete, type Course, type Progress } from '../progress/computeCompletion';
 import { generateCertificatePdf as realGenerateCertificatePdf } from './generateCertificatePdf';
 
@@ -46,9 +48,8 @@ export async function handleProgressUpdate(
 export const onProgressUpdated = functionsV1.firestore
   .document('tenants/{tenantId}/students/{studentId}/progress/{courseId}')
   .onWrite(async (change, context) => {
-    const admin = await import('firebase-admin');
-    const db = admin.firestore();
-    const storage = admin.storage();
+    const db = getFirestore();
+    const storage = getStorage();
 
     const { tenantId, studentId, courseId } = context.params;
     const progressData = change.after.data();
@@ -64,7 +65,7 @@ export const onProgressUpdated = functionsV1.firestore
     const lessonIds: string[] = [];
     for (const moduleDoc of modulesSnap.docs) {
       const lessonsSnap = await moduleDoc.ref.collection('lessons').get();
-      lessonsSnap.forEach((l) => lessonIds.push(l.id));
+      lessonsSnap.forEach((l: QueryDocumentSnapshot) => lessonIds.push(l.id));
     }
 
     await handleProgressUpdate(

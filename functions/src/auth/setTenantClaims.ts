@@ -1,6 +1,7 @@
 // functions/src/auth/setTenantClaims.ts
-import type { auth as AdminAuth } from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import * as functionsV1 from 'firebase-functions/v1';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 
 export type Role = 'owner' | 'instructor' | 'student';
 
@@ -12,7 +13,7 @@ interface AssignClaimsInput {
 }
 
 export async function assignTenantClaims(
-  adminAuth: Pick<AdminAuth.Auth, 'setCustomUserClaims' | 'getUser'>,
+  adminAuth: Pick<Auth, 'setCustomUserClaims' | 'getUser'>,
   input: AssignClaimsInput,
 ): Promise<{ success: true }> {
   if (input.callerClaims.role !== 'owner') {
@@ -30,7 +31,7 @@ export async function assignTenantClaims(
   return { success: true };
 }
 
-export const setTenantClaims = functions.https.onCall(async (data, context) => {
+export const setTenantClaims = functionsV1.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
   }
@@ -44,9 +45,7 @@ export const setTenantClaims = functions.https.onCall(async (data, context) => {
   }
   const callerClaims = { tenantId: token.tenantId, role: token.role as Role };
 
-  const admin = await import('firebase-admin');
-
-  return assignTenantClaims(admin.auth(), {
+  return assignTenantClaims(getAuth(), {
     callerClaims,
     targetUid: data.targetUid,
     tenantId: data.tenantId,
