@@ -1,5 +1,9 @@
 node_modules/
 functions/node_modules/
+functions/lib/
 .next/
 next-env.d.ts
 tsconfig.tsbuildinfo
+firestore-debug.log
+ui-debug.log
+firebase-debug.log
