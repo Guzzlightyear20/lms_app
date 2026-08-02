@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore,auth \"vitest run --config test/rules/vitest.config.ts\""
   },
   "keywords": [],
   "author": "",
@@ -22,8 +23,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
     "@types/node": "^26.1.2",
     "@types/react": "^18.3.31",
+    "firebase-tools": "^15.22.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }
