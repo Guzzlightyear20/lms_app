@@ -89,4 +89,42 @@ describe('tenant isolation', () => {
     );
     await assertSucceeds(allowedWrite);
   });
+
+  it('denies a student from tenant A reading a nested lesson in tenant B', async () => {
+    const tenantAStudent = testEnv.authenticatedContext('student-a', {
+      tenantId: 'tenant-a',
+      role: 'student',
+    });
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(
+          context.firestore(),
+          'tenants/tenant-b/courses/course-1/modules/module-1/lessons/lesson-1',
+        ),
+        { title: 'Secret lesson' },
+      );
+    });
+
+    const blockedRead = getDoc(
+      doc(
+        tenantAStudent.firestore(),
+        'tenants/tenant-b/courses/course-1/modules/module-1/lessons/lesson-1',
+      ),
+    );
+    await assertFails(blockedRead);
+  });
+
+  it('denies an owner from tenant A writing course content in tenant B', async () => {
+    const tenantAOwner = testEnv.authenticatedContext('owner-a', {
+      tenantId: 'tenant-a',
+      role: 'owner',
+    });
+
+    const blockedWrite = setDoc(
+      doc(tenantAOwner.firestore(), 'tenants/tenant-b/courses/course-4'),
+      { title: 'Cross-tenant hack', published: false },
+    );
+    await assertFails(blockedWrite);
+  });
 });
