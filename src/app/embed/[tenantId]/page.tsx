@@ -19,7 +19,7 @@ export default async function EmbedCatalogPage({
       <ul>
         {courses.map((course) => (
           <li key={course.id}>
-            <a href={`/embed/${params.tenantId}/cursos/${course.id}`} target="_top">
+            <a href={`/${params.tenantId}/cursos/${course.id}`} target="_top">
               {course.title}
             </a>
           </li>

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { getFirebaseApp } from '@/lib/firebase/client';
 
 export interface AuthClaims {
@@ -13,9 +13,15 @@ interface AuthContextValue {
   user: User | null;
   claims: AuthClaims | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, claims: null, loading: true });
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  claims: null,
+  loading: true,
+  signOut: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -24,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const auth = getAuth(getFirebaseApp());
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+    const unsubscribe = onIdTokenChanged(auth, async (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
         const tokenResult = await nextUser.getIdTokenResult();
@@ -44,7 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  return <AuthContext.Provider value={{ user, claims, loading }}>{children}</AuthContext.Provider>;
+  async function signOut() {
+    const auth = getAuth(getFirebaseApp());
+    await firebaseSignOut(auth);
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, claims, loading, signOut }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {

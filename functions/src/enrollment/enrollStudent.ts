@@ -18,35 +18,64 @@ export const enrollStudent = functionsV1.https.onCall(async (data, context) => {
   }
   const callerClaims = { tenantId: token.tenantId, role: token.role as Role };
 
+  if (typeof data.email !== 'string' || data.email.trim() === '') {
+    throw new functionsV1.https.HttpsError('invalid-argument', 'email is required');
+  }
+  if (typeof data.courseId !== 'string' || data.courseId.trim() === '') {
+    throw new functionsV1.https.HttpsError('invalid-argument', 'courseId is required');
+  }
+
   const auth = getAuth();
   const db = getFirestore();
 
-  return assignEnrollment(
-    {
-      getUserByEmail: async (email) => {
-        const userRecord = await auth.getUserByEmail(email);
-        return { uid: userRecord.uid };
+  try {
+    return await assignEnrollment(
+      {
+        getUserByEmail: async (email) => {
+          const userRecord = await auth.getUserByEmail(email);
+          return {
+            uid: userRecord.uid,
+            email: userRecord.email ?? email,
+            displayName: userRecord.displayName ?? null,
+            existingClaims: (userRecord.customClaims as { tenantId?: string; role?: Role } | undefined) ?? null,
+          };
+        },
+        setCustomUserClaims: (uid, claims) => auth.setCustomUserClaims(uid, claims),
+        progressExists: async (tenantId, uid, courseId) => {
+          const snap = await db
+            .doc(`tenants/${tenantId}/students/${uid}/progress/${courseId}`)
+            .get();
+          return snap.exists;
+        },
+        createProgress: async (tenantId, uid, courseId, studentInfo) => {
+          await db.doc(`tenants/${tenantId}/students/${uid}`).set(
+            { name: studentInfo.displayName ?? studentInfo.email, email: studentInfo.email },
+            { merge: true },
+          );
+          await db.doc(`tenants/${tenantId}/students/${uid}/progress/${courseId}`).set({
+            courseId,
+            lessonsCompleted: [],
+            quizScores: {},
+            certificateUrl: null,
+          });
+        },
       },
-      setCustomUserClaims: (uid, claims) => auth.setCustomUserClaims(uid, claims),
-      progressExists: async (tenantId, uid, courseId) => {
-        const snap = await db
-          .doc(`tenants/${tenantId}/students/${uid}/progress/${courseId}`)
-          .get();
-        return snap.exists;
+      {
+        callerClaims,
+        email: data.email,
+        courseId: data.courseId,
       },
-      createProgress: async (tenantId, uid, courseId) => {
-        await db.doc(`tenants/${tenantId}/students/${uid}/progress/${courseId}`).set({
-          courseId,
-          lessonsCompleted: [],
-          quizScores: {},
-          certificateUrl: null,
-        });
-      },
-    },
-    {
-      callerClaims,
-      email: data.email,
-      courseId: data.courseId,
-    },
-  );
+    );
+  } catch (err) {
+    if (err instanceof Error && /there is no user record/i.test(err.message)) {
+      throw new functionsV1.https.HttpsError(
+        'not-found',
+        'No existe una cuenta con ese email. El alumno debe registrarse primero.',
+      );
+    }
+    if (err instanceof Error) {
+      throw new functionsV1.https.HttpsError('failed-precondition', err.message);
+    }
+    throw err;
+  }
 });

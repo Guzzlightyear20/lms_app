@@ -31,6 +31,8 @@ export default function CursoPage({
   const [lessonsCompleted, setLessonsCompleted] = useState<string[]>([]);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     if (authLoading || !user || claims?.role !== 'student' || claims.tenantId !== params.tenant) {
@@ -38,66 +40,75 @@ export default function CursoPage({
     }
 
     async function loadCourseContent() {
-      const db = getFirestore(getFirebaseApp());
+      try {
+        const db = getFirestore(getFirebaseApp());
 
-      const modulesSnap = await getDocs(
-        query(
-          collection(db, `tenants/${params.tenant}/courses/${params.courseId}/modules`),
-          orderBy('order'),
-        ),
-      );
-
-      const allLessons: LessonWithModule[] = [];
-      for (const moduleDoc of modulesSnap.docs) {
-        const lessonsSnap = await getDocs(
+        const modulesSnap = await getDocs(
           query(
-            collection(
-              db,
-              `tenants/${params.tenant}/courses/${params.courseId}/modules/${moduleDoc.id}/lessons`,
-            ),
+            collection(db, `tenants/${params.tenant}/courses/${params.courseId}/modules`),
             orderBy('order'),
           ),
         );
-        lessonsSnap.forEach((lessonDoc) => {
-          const data = lessonDoc.data();
-          allLessons.push({
-            id: lessonDoc.id,
-            moduleId: moduleDoc.id,
-            title: data.title,
-            order: data.order,
-            videoUrl: data.videoUrl ?? null,
-            textContent: data.textContent ?? null,
-            attachmentUrls: data.attachmentUrls ?? [],
+
+        const allLessons: LessonWithModule[] = [];
+        for (const moduleDoc of modulesSnap.docs) {
+          const lessonsSnap = await getDocs(
+            query(
+              collection(
+                db,
+                `tenants/${params.tenant}/courses/${params.courseId}/modules/${moduleDoc.id}/lessons`,
+              ),
+              orderBy('order'),
+            ),
+          );
+          lessonsSnap.forEach((lessonDoc) => {
+            const data = lessonDoc.data();
+            allLessons.push({
+              id: lessonDoc.id,
+              moduleId: moduleDoc.id,
+              title: data.title,
+              order: data.order,
+              videoUrl: data.videoUrl ?? null,
+              textContent: data.textContent ?? null,
+              attachmentUrls: data.attachmentUrls ?? [],
+            });
           });
-        });
-      }
-      setLessons(allLessons);
-      if (allLessons.length > 0) {
-        setSelectedLessonId(allLessons[0].id);
-      }
+        }
+        setLessons(allLessons);
+        if (allLessons.length > 0) {
+          setSelectedLessonId(allLessons[0].id);
+        }
 
-      const progressSnap = await getDoc(
-        doc(db, `tenants/${params.tenant}/students/${user!.uid}/progress/${params.courseId}`),
-      );
-      if (progressSnap.exists()) {
-        setLessonsCompleted(progressSnap.data().lessonsCompleted ?? []);
+        const progressSnap = await getDoc(
+          doc(db, `tenants/${params.tenant}/students/${user!.uid}/progress/${params.courseId}`),
+        );
+        if (progressSnap.exists()) {
+          setLessonsCompleted(progressSnap.data().lessonsCompleted ?? []);
+          setIsEnrolled(true);
+        }
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : 'No se pudo cargar el curso');
+      } finally {
+        setDataLoading(false);
       }
-
-      setDataLoading(false);
     }
 
     loadCourseContent();
   }, [authLoading, user, claims, params.tenant, params.courseId]);
 
   async function markComplete(lessonId: string) {
-    if (!user) return;
+    if (!user || !isEnrolled) return;
     const db = getFirestore(getFirebaseApp());
     const updated = addCompletedLesson(lessonsCompleted, lessonId);
-    await updateDoc(
-      doc(db, `tenants/${params.tenant}/students/${user.uid}/progress/${params.courseId}`),
-      { lessonsCompleted: updated },
-    );
-    setLessonsCompleted(updated);
+    try {
+      await updateDoc(
+        doc(db, `tenants/${params.tenant}/students/${user.uid}/progress/${params.courseId}`),
+        { lessonsCompleted: updated },
+      );
+      setLessonsCompleted(updated);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudo marcar la lección como completada');
+    }
   }
 
   if (authLoading) {
@@ -119,6 +130,10 @@ export default function CursoPage({
 
   if (dataLoading) {
     return <main>Cargando contenido del curso...</main>;
+  }
+
+  if (loadError) {
+    return <main>Error al cargar el curso: {loadError}</main>;
   }
 
   const selectedLesson = lessons.find((l) => l.id === selectedLessonId) ?? null;
@@ -145,9 +160,13 @@ export default function CursoPage({
               <video src={selectedLesson.videoUrl} controls style={{ width: '100%' }} />
             )}
             {selectedLesson.textContent && <p>{selectedLesson.textContent}</p>}
-            <button onClick={() => markComplete(selectedLesson.id)}>
-              Marcar como completada
-            </button>
+            {isEnrolled ? (
+              <button onClick={() => markComplete(selectedLesson.id)}>
+                Marcar como completada
+              </button>
+            ) : (
+              <p>No estás inscripto en este curso.</p>
+            )}
           </>
         )}
       </section>

@@ -8,7 +8,12 @@ function makeDeps(overrides: Partial<{
   createProgress: ReturnType<typeof vi.fn>;
 }> = {}) {
   return {
-    getUserByEmail: vi.fn().mockResolvedValue({ uid: 'student-uid-1' }),
+    getUserByEmail: vi.fn().mockResolvedValue({
+      uid: 'student-uid-1',
+      email: 'alumno@example.com',
+      displayName: 'Alumno Uno',
+      existingClaims: null,
+    }),
     setCustomUserClaims: vi.fn().mockResolvedValue(undefined),
     progressExists: vi.fn().mockResolvedValue(false),
     createProgress: vi.fn().mockResolvedValue(undefined),
@@ -31,7 +36,7 @@ describe('assignEnrollment', () => {
     expect(deps.getUserByEmail).not.toHaveBeenCalled();
   });
 
-  it('resolves the student by email, assigns claims, and creates a new progress record', async () => {
+  it('resolves the student by email, assigns claims, creates the parent student doc and a new progress record', async () => {
     const deps = makeDeps();
 
     const result = await assignEnrollment(deps, {
@@ -45,7 +50,10 @@ describe('assignEnrollment', () => {
       tenantId: 'tenant-a',
       role: 'student',
     });
-    expect(deps.createProgress).toHaveBeenCalledWith('tenant-a', 'student-uid-1', 'course-1');
+    expect(deps.createProgress).toHaveBeenCalledWith('tenant-a', 'student-uid-1', 'course-1', {
+      email: 'alumno@example.com',
+      displayName: 'Alumno Uno',
+    });
     expect(result).toEqual({ success: true, studentUid: 'student-uid-1' });
   });
 
@@ -71,5 +79,85 @@ describe('assignEnrollment', () => {
     });
 
     expect(deps.createProgress).not.toHaveBeenCalled();
+  });
+
+  it('rejects enrolling a target user who is already an owner', async () => {
+    const deps = makeDeps({
+      getUserByEmail: vi.fn().mockResolvedValue({
+        uid: 'owner-uid-1',
+        email: 'owner@example.com',
+        displayName: 'Owner',
+        existingClaims: { tenantId: 'tenant-a', role: 'owner' },
+      }),
+    });
+
+    await expect(
+      assignEnrollment(deps, {
+        callerClaims: { tenantId: 'tenant-a', role: 'instructor' },
+        email: 'owner@example.com',
+        courseId: 'course-1',
+      }),
+    ).rejects.toThrow('target user is an owner or instructor and cannot be enrolled as a student');
+
+    expect(deps.setCustomUserClaims).not.toHaveBeenCalled();
+  });
+
+  it('rejects enrolling a target user who is already an instructor', async () => {
+    const deps = makeDeps({
+      getUserByEmail: vi.fn().mockResolvedValue({
+        uid: 'instructor-uid-1',
+        email: 'instructor@example.com',
+        displayName: 'Instructor',
+        existingClaims: { tenantId: 'tenant-a', role: 'instructor' },
+      }),
+    });
+
+    await expect(
+      assignEnrollment(deps, {
+        callerClaims: { tenantId: 'tenant-a', role: 'owner' },
+        email: 'instructor@example.com',
+        courseId: 'course-1',
+      }),
+    ).rejects.toThrow('target user is an owner or instructor and cannot be enrolled as a student');
+  });
+
+  it('rejects enrolling a target user who belongs to a different tenant', async () => {
+    const deps = makeDeps({
+      getUserByEmail: vi.fn().mockResolvedValue({
+        uid: 'other-tenant-uid',
+        email: 'otro@example.com',
+        displayName: null,
+        existingClaims: { tenantId: 'tenant-b', role: 'student' },
+      }),
+    });
+
+    await expect(
+      assignEnrollment(deps, {
+        callerClaims: { tenantId: 'tenant-a', role: 'owner' },
+        email: 'otro@example.com',
+        courseId: 'course-1',
+      }),
+    ).rejects.toThrow('target user belongs to a different tenant');
+
+    expect(deps.setCustomUserClaims).not.toHaveBeenCalled();
+  });
+
+  it('skips the redundant claims write when the student already has the correct claims', async () => {
+    const deps = makeDeps({
+      getUserByEmail: vi.fn().mockResolvedValue({
+        uid: 'student-uid-1',
+        email: 'alumno@example.com',
+        displayName: 'Alumno Uno',
+        existingClaims: { tenantId: 'tenant-a', role: 'student' },
+      }),
+    });
+
+    await assignEnrollment(deps, {
+      callerClaims: { tenantId: 'tenant-a', role: 'owner' },
+      email: 'alumno@example.com',
+      courseId: 'course-1',
+    });
+
+    expect(deps.setCustomUserClaims).not.toHaveBeenCalled();
   });
 });
