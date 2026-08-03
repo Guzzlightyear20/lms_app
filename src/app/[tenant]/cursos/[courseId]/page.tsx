@@ -32,6 +32,7 @@ export default function CursoPage({
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function CursoPage({
     if (!user || !isEnrolled) return;
     const db = getFirestore(getFirebaseApp());
     const updated = addCompletedLesson(lessonsCompleted, lessonId);
+    setActionError(null);
     try {
       await updateDoc(
         doc(db, `tenants/${params.tenant}/students/${user.uid}/progress/${params.courseId}`),
@@ -107,7 +109,9 @@ export default function CursoPage({
       );
       setLessonsCompleted(updated);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'No se pudo marcar la lección como completada');
+      setActionError(
+        err instanceof Error ? err.message : 'No se pudo marcar la lección como completada',
+      );
     }
   }
 
@@ -161,9 +165,12 @@ export default function CursoPage({
             )}
             {selectedLesson.textContent && <p>{selectedLesson.textContent}</p>}
             {isEnrolled ? (
-              <button onClick={() => markComplete(selectedLesson.id)}>
-                Marcar como completada
-              </button>
+              <>
+                <button onClick={() => markComplete(selectedLesson.id)}>
+                  Marcar como completada
+                </button>
+                {actionError && <p role="alert">{actionError}</p>}
+              </>
             ) : (
               <p>No estás inscripto en este curso.</p>
             )}

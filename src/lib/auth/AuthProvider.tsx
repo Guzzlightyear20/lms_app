@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { getAuth, onIdTokenChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { getFirebaseApp } from '@/lib/firebase/client';
 
@@ -14,6 +22,7 @@ interface AuthContextValue {
   claims: AuthClaims | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshClaims: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -21,7 +30,15 @@ const AuthContext = createContext<AuthContextValue>({
   claims: null,
   loading: true,
   signOut: async () => {},
+  refreshClaims: async () => {},
 });
+
+function parseClaims(rawClaims: Record<string, unknown>): AuthClaims {
+  return {
+    tenantId: typeof rawClaims.tenantId === 'string' ? rawClaims.tenantId : undefined,
+    role: typeof rawClaims.role === 'string' ? (rawClaims.role as AuthClaims['role']) : undefined,
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -34,14 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextUser);
       if (nextUser) {
         const tokenResult = await nextUser.getIdTokenResult();
-        setClaims({
-          tenantId:
-            typeof tokenResult.claims.tenantId === 'string' ? tokenResult.claims.tenantId : undefined,
-          role:
-            typeof tokenResult.claims.role === 'string'
-              ? (tokenResult.claims.role as AuthClaims['role'])
-              : undefined,
-        });
+        setClaims(parseClaims(tokenResult.claims));
       } else {
         setClaims(null);
       }
@@ -50,14 +60,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     const auth = getAuth(getFirebaseApp());
     await firebaseSignOut(auth);
-  }
+  }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, claims, loading, signOut }}>{children}</AuthContext.Provider>
+  const refreshClaims = useCallback(async () => {
+    const auth = getAuth(getFirebaseApp());
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return;
+    }
+    const tokenResult = await currentUser.getIdTokenResult(true);
+    setClaims(parseClaims(tokenResult.claims));
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, claims, loading, signOut, refreshClaims }),
+    [user, claims, loading, signOut, refreshClaims],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {
