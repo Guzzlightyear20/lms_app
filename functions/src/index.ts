@@ -3,3 +3,4 @@ import './admin';
 
 export { setTenantClaims } from './auth/setTenantClaims';
 export { onProgressUpdated } from './certificate/onProgressUpdated';
+export { enrollStudent } from './enrollment/enrollStudent';
