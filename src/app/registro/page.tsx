@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase/client';
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function RegistroPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const auth = getAuth(getFirebaseApp());
+      const auth = getFirebaseAuth();
       await createUserWithEmailAndPassword(auth, email, password);
       router.push('/cuenta');
     } catch (err) {

@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  getFirestore,
   collection,
   doc,
   getDocs,
@@ -12,7 +11,7 @@ import {
   query,
   orderBy,
 } from 'firebase/firestore';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { getFirebaseFirestore } from '@/lib/firebase/client';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { addCompletedLesson } from '@/lib/progress/addCompletedLesson';
 import type { Lesson } from '@/lib/models/types';
@@ -42,7 +41,7 @@ export default function CursoPage({
 
     async function loadCourseContent() {
       try {
-        const db = getFirestore(getFirebaseApp());
+        const db = getFirebaseFirestore();
 
         const modulesSnap = await getDocs(
           query(
@@ -99,7 +98,7 @@ export default function CursoPage({
 
   async function markComplete(lessonId: string) {
     if (!user || !isEnrolled) return;
-    const db = getFirestore(getFirebaseApp());
+    const db = getFirebaseFirestore();
     const updated = addCompletedLesson(lessonsCompleted, lessonId);
     setActionError(null);
     try {

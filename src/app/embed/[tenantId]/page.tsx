@@ -1,5 +1,5 @@
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirebaseFirestore } from '@/lib/firebase/client';
 import { courseConverter } from '@/lib/models/courseConverters';
 
 export default async function EmbedCatalogPage({
@@ -7,7 +7,7 @@ export default async function EmbedCatalogPage({
 }: {
   params: { tenantId: string };
 }) {
-  const db = getFirestore(getFirebaseApp());
+  const db = getFirebaseFirestore();
   const coursesRef = collection(db, `tenants/${params.tenantId}/courses`).withConverter(
     courseConverter,
   );

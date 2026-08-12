@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { httpsCallable } from 'firebase/functions';
+import { getFirebaseFunctions } from '@/lib/firebase/client';
 
 export default function InscribirPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export default function InscribirPage() {
     setStatus('submitting');
     setMessage(null);
     try {
-      const functions = getFunctions(getFirebaseApp());
+      const functions = getFirebaseFunctions();
       const enrollStudent = httpsCallable(functions, 'enrollStudent');
       await enrollStudent({ email, courseId });
       setStatus('done');

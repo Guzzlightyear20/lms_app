@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase/client';
 import { resolveLandingRoute } from '@/lib/auth/resolveLandingRoute';
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const auth = getAuth(getFirebaseApp());
+      const auth = getFirebaseAuth();
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const tokenResult = await credential.user.getIdTokenResult(true);
       const role = typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : undefined;

@@ -9,8 +9,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { getAuth, onIdTokenChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase/client';
+import { onIdTokenChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase/client';
 
 export interface AuthClaims {
   tenantId?: string;
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
+    const auth = getFirebaseAuth();
     const unsubscribe = onIdTokenChanged(auth, async (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
@@ -61,12 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    const auth = getAuth(getFirebaseApp());
+    const auth = getFirebaseAuth();
     await firebaseSignOut(auth);
   }, []);
 
   const refreshClaims = useCallback(async () => {
-    const auth = getAuth(getFirebaseApp());
+    const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) {
       return;

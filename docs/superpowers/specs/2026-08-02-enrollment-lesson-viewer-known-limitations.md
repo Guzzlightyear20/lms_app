@@ -5,29 +5,50 @@ known-limitations doc. Two rounds of whole-branch review found and fixed 2 Criti
 Important defects; these are the items that were deliberately left open rather than fixed in this
 pass, so they don't only exist in review conversation history.
 
-## No live Firebase emulator verification of this phase's runtime behavior
+## Live emulator verification: partially closed after this doc was first written
 
-Nothing in `src/lib/firebase/client.ts` calls `connectAuthEmulator`, `connectFirestoreEmulator`, or
-`connectFunctionsEmulator`. `firebase.json` has emulator ports configured (added in this phase for
-`functions`, alongside the pre-existing `firestore`/`auth`), but the browser client never connects
-to them — every manual-verification step for the panel enrollment screen and lesson viewer was
-build/typecheck-only, never exercised against a running backend.
+**Update (same day, after initial writing):** `src/lib/firebase/client.ts` now exposes
+`getFirebaseAuth()` / `getFirebaseFirestore()` / `getFirebaseFunctions()`, which connect to the
+local emulators via `connect*Emulator` when `NEXT_PUBLIC_USE_EMULATORS=true` (see `.env.local`,
+gitignored). All seven consumer files (`AuthProvider`, `/registro`, `/login`,
+`/panel/inscribir`, the public catalog + embed pages, the lesson viewer) were switched over to
+these wrappers. This was verified live: registering a real account against the Auth emulator and
+landing on `/cuenta` in the correct no-claims state, and the public catalog page rendering against
+the Firestore emulator with no crash.
 
-A controller-attempted live smoke test (start firestore+auth+functions emulators, exercise
-`enrollStudent` end to end) hit environment friction — a slow first-time Firestore emulator JAR
-download combined with background-process lifecycle issues in the tooling used this session — and
-was abandoned rather than completed.
+**What's still not verified live**: the actual `enrollStudent` → lesson viewer → mark-complete →
+certificate-generates cycle end to end. Reaching that requires a bootstrapped owner account (custom
+claims can only be set via the Admin SDK, and there's no self-service path to become an owner — see
+the prior phase's "tenant creation UI" gap), plus seeded course/module/lesson data. Setting that up
+wasn't done in this pass.
 
-This matters more here than for typical deferred items: it's the reason two real Critical bugs
-(missing `students/{uid}` parent doc breaking the certificate trigger; unrestricted claims
-overwrite letting an instructor demote an owner) survived ten individual task reviews and were only
-caught by careful manual code tracing in the final whole-branch review, not by actually running the
-code. Static review is not a substitute for execution — it caught these bugs this time, but that's
-not something to rely on again.
+**Root cause found for the Cloud Functions emulator's initial "Failed to load function
+definition... Timeout after 10000" error** (this was mistakenly attributed to environment/tooling
+friction when this doc was first written): the emulator gives function loading a hard 10-second
+budget, and `require()`-ing the freshly-built `functions/lib/index.js` took longer than that on its
+very first touch after a `tsc` build — most likely Windows Defender scanning the newly-written JS
+files. It is NOT a code defect: isolated `require()` calls on `lib/admin.js`,
+`lib/auth/setTenantClaims.js`, `lib/certificate/onProgressUpdated.js`, and
+`lib/enrollment/enrollStudent.js` all loaded in well under a second individually, and a cold
+`require('./lib/index.js')` that first timed out at 8s loaded cleanly in 550ms on retry once the
+files had been touched once. Restarting the functions emulator a second time after a build is a
+reliable workaround; a `tsc --build` cache warm (e.g. running the build twice, or excluding
+`functions/lib` from real-time AV scanning) would remove the need for that workaround.
 
-**Recommended fix for the next phase**: add `connect*Emulator` calls behind a
-`NEXT_PUBLIC_USE_EMULATORS` env flag, and actually run a full enroll → view lesson → mark complete →
-certificate-generates cycle against the emulators before considering any future phase done.
+Two other things worth recording about the emulator session itself:
+- Processes started via `nohup ... & disown` inside a single Bash tool call did not survive between
+  separate tool calls in this session's tooling — the emulator was confirmed listening on all its
+  ports, then found completely gone (nothing on any of its ports) on the next check. Starting it
+  with the tool's own `run_in_background: true` parameter instead kept it alive correctly. This
+  matches earlier `npm install` background-process patterns observed in the prior phase.
+- No backfill or seed script exists for local demo data (a bootstrapped owner, sample courses,
+  modules, lessons) — every live check in this pass either used the Firestore Emulator UI directly
+  or was limited to what doesn't require seed data (registration, login, empty catalog render).
+
+**Recommended fix for the next phase**: write a small seed script (or a documented manual sequence
+via the Emulator UI) that creates one owner account, one tenant, one course with a lesson, so the
+full enroll → view → complete → certificate cycle can actually be exercised locally without hand
+data-entry every time.
 
 ## No positive Firestore rules test for the mark-complete write
 
