@@ -1,5 +1,5 @@
 // functions/src/certificate/onProgressUpdated.ts
-import * as functionsV1 from 'firebase-functions/v1';
+import * as functionsV1 from 'firebase-functions/v1/firestore';
 import { getFirestore, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { isCourseComplete, type Course, type Progress } from '../progress/computeCompletion';
@@ -45,7 +45,7 @@ export async function handleProgressUpdate(
   await deps.updateProgressDoc(input.course.id, url);
 }
 
-export const onProgressUpdated = functionsV1.firestore
+export const onProgressUpdated = functionsV1
   .document('tenants/{tenantId}/students/{studentId}/progress/{courseId}')
   .onWrite(async (change, context) => {
     const db = getFirestore();

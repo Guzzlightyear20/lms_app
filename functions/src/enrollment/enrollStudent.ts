@@ -1,17 +1,17 @@
 // functions/src/enrollment/enrollStudent.ts
-import * as functionsV1 from 'firebase-functions/v1';
+import * as functionsV1 from 'firebase-functions/v1/https';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { assignEnrollment, type Role } from './assignEnrollment';
 
-export const enrollStudent = functionsV1.https.onCall(async (data, context) => {
+export const enrollStudent = functionsV1.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functionsV1.https.HttpsError('unauthenticated', 'Must be signed in');
+    throw new functionsV1.HttpsError('unauthenticated', 'Must be signed in');
   }
 
   const token = context.auth.token as Record<string, unknown>;
   if (typeof token.tenantId !== 'string' || typeof token.role !== 'string') {
-    throw new functionsV1.https.HttpsError(
+    throw new functionsV1.HttpsError(
       'failed-precondition',
       'Caller is missing tenantId/role claims',
     );
@@ -19,10 +19,10 @@ export const enrollStudent = functionsV1.https.onCall(async (data, context) => {
   const callerClaims = { tenantId: token.tenantId, role: token.role as Role };
 
   if (typeof data.email !== 'string' || data.email.trim() === '') {
-    throw new functionsV1.https.HttpsError('invalid-argument', 'email is required');
+    throw new functionsV1.HttpsError('invalid-argument', 'email is required');
   }
   if (typeof data.courseId !== 'string' || data.courseId.trim() === '') {
-    throw new functionsV1.https.HttpsError('invalid-argument', 'courseId is required');
+    throw new functionsV1.HttpsError('invalid-argument', 'courseId is required');
   }
 
   const auth = getAuth();
@@ -68,13 +68,13 @@ export const enrollStudent = functionsV1.https.onCall(async (data, context) => {
     );
   } catch (err) {
     if (err instanceof Error && /there is no user record/i.test(err.message)) {
-      throw new functionsV1.https.HttpsError(
+      throw new functionsV1.HttpsError(
         'not-found',
         'No existe una cuenta con ese email. El alumno debe registrarse primero.',
       );
     }
     if (err instanceof Error) {
-      throw new functionsV1.https.HttpsError('failed-precondition', err.message);
+      throw new functionsV1.HttpsError('failed-precondition', err.message);
     }
     throw err;
   }

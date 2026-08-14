@@ -1,5 +1,5 @@
 // functions/src/auth/setTenantClaims.ts
-import * as functionsV1 from 'firebase-functions/v1';
+import * as functionsV1 from 'firebase-functions/v1/https';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 
 export type Role = 'owner' | 'instructor' | 'student';
@@ -30,14 +30,14 @@ export async function assignTenantClaims(
   return { success: true };
 }
 
-export const setTenantClaims = functionsV1.https.onCall(async (data, context) => {
+export const setTenantClaims = functionsV1.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functionsV1.https.HttpsError('unauthenticated', 'Must be signed in');
+    throw new functionsV1.HttpsError('unauthenticated', 'Must be signed in');
   }
 
   const token = context.auth.token as Record<string, unknown>;
   if (typeof token.tenantId !== 'string' || typeof token.role !== 'string') {
-    throw new functionsV1.https.HttpsError(
+    throw new functionsV1.HttpsError(
       'failed-precondition',
       'Caller is missing tenantId/role claims',
     );
