@@ -17,8 +17,15 @@
 
 body {
   margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--color-ink);
+}
+
+body:has(.page-app) {
+  background: var(--color-bg-app);
 }
 
 button,
@@ -44,7 +51,7 @@ a {
 
 /* Hero page shell (public, unauthenticated) */
 .page-hero {
-  min-height: 100dvh;
+  flex: 1;
   background: var(--color-accent);
   display: flex;
   flex-direction: column;
@@ -69,10 +76,13 @@ a {
   max-width: 380px;
 }
 
+.page-hero .card.card--wide {
+  max-width: 560px;
+}
+
 /* App page shell (authenticated) */
 .page-app {
-  min-height: 100dvh;
-  background: var(--color-bg-app);
+  flex: 1;
 }
 
 .page-app-content {
