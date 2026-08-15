@@ -29,6 +29,7 @@ export default function LessonEditorPage({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lessonSavedConfirmation, setLessonSavedConfirmation] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [newQuestionOptions, setNewQuestionOptions] = useState(['', '']);
   const [newQuestionCorrect, setNewQuestionCorrect] = useState(0);
@@ -113,12 +114,15 @@ export default function LessonEditorPage({
       deleteLessonDoc: async () => {},
       writeLessonOrder: async () => {},
     };
+    setLessonSavedConfirmation(false);
     try {
       await updateLesson(deps, tenantId, params.courseId, moduleId, params.lessonId, {
         title: lesson.title,
         videoUrl: lesson.videoUrl,
         textContent: lesson.textContent,
       });
+      setLessonSavedConfirmation(true);
+      setTimeout(() => setLessonSavedConfirmation(false), 2500);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'No se pudo guardar la lección');
     }
@@ -265,6 +269,11 @@ export default function LessonEditorPage({
             <button type="submit" className="btn btn-primary">
               Guardar
             </button>
+            {lessonSavedConfirmation && (
+              <span className="badge" style={{ marginLeft: 12 }}>
+                Guardado ✓
+              </span>
+            )}
           </form>
         </div>
 

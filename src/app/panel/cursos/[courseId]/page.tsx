@@ -80,6 +80,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [savedConfirmation, setSavedConfirmation] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [newLessonTitles, setNewLessonTitles] = useState<Record<string, string>>({});
 
@@ -336,6 +337,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
     event.preventDefault();
     if (!tenantId || !course) return;
     setActionError(null);
+    setSavedConfirmation(false);
     try {
       const deps: CourseDeps = {
         createCourseDoc: async () => '',
@@ -350,6 +352,8 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
         description: course.description,
         published: course.published,
       });
+      setSavedConfirmation(true);
+      setTimeout(() => setSavedConfirmation(false), 2500);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
     }
@@ -412,6 +416,11 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
             <button type="submit" className="btn btn-primary">
               Guardar
             </button>
+            {savedConfirmation && (
+              <span className="badge" style={{ marginLeft: 12 }}>
+                Guardado ✓
+              </span>
+            )}
           </form>
         </div>
 
