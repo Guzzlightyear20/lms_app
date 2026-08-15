@@ -15,16 +15,14 @@ export default async function EmbedCatalogPage({
   const courses = snapshot.docs.map((d) => d.data());
 
   return (
-    <main style={{ margin: 0, fontFamily: 'sans-serif' }}>
-      <ul>
-        {courses.map((course) => (
-          <li key={course.id}>
-            <a href={`/${params.tenantId}/cursos/${course.id}`} target="_top">
-              {course.title}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <ul className="embed-list">
+      {courses.map((course) => (
+        <li key={course.id}>
+          <a href={`/${params.tenantId}/cursos/${course.id}`} target="_top">
+            {course.title}
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }
