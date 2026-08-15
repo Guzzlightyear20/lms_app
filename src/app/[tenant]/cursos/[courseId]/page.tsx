@@ -115,67 +115,112 @@ export default function CursoPage({
   }
 
   if (authLoading) {
-    return <main>Cargando...</main>;
+    return (
+      <div className="page-app">
+        <div className="page-app-content">
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <main>
-        <p>Tenés que iniciar sesión para ver este curso.</p>
-        <a href="/login">Iniciar sesión</a>
-      </main>
+      <div className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p>Tenés que iniciar sesión para ver este curso.</p>
+            <a href="/login" className="btn btn-primary" style={{ marginTop: 12 }}>
+              Iniciar sesión
+            </a>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (claims?.role !== 'student' || claims.tenantId !== params.tenant) {
-    return <main>No tenés acceso a este curso.</main>;
+    return (
+      <div className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p>No tenés acceso a este curso.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (dataLoading) {
-    return <main>Cargando contenido del curso...</main>;
+    return (
+      <div className="page-app">
+        <div className="page-app-content">
+          <p>Cargando contenido del curso...</p>
+        </div>
+      </div>
+    );
   }
 
   if (loadError) {
-    return <main>Error al cargar el curso: {loadError}</main>;
+    return (
+      <div className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p className="alert alert-error" role="alert">
+              Error al cargar el curso: {loadError}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const selectedLesson = lessons.find((l) => l.id === selectedLessonId) ?? null;
 
   return (
-    <main>
-      <aside>
-        <ul>
-          {lessons.map((lesson) => (
-            <li key={lesson.id}>
-              <button onClick={() => setSelectedLessonId(lesson.id)}>
-                {lessonsCompleted.includes(lesson.id) ? '✓ ' : ''}
-                {lesson.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
-      <section>
-        {selectedLesson && (
-          <>
-            <h1>{selectedLesson.title}</h1>
-            {selectedLesson.videoUrl && (
-              <video src={selectedLesson.videoUrl} controls style={{ width: '100%' }} />
-            )}
-            {selectedLesson.textContent && <p>{selectedLesson.textContent}</p>}
-            {isEnrolled ? (
-              <>
-                <button onClick={() => markComplete(selectedLesson.id)}>
-                  Marcar como completada
+    <div className="page-app">
+      <div className="lesson-layout">
+        <aside className="card">
+          <ul className="lesson-sidebar-list">
+            {lessons.map((lesson) => (
+              <li key={lesson.id}>
+                <button
+                  className={lesson.id === selectedLessonId ? 'active' : ''}
+                  onClick={() => setSelectedLessonId(lesson.id)}
+                >
+                  {lessonsCompleted.includes(lesson.id) ? '✓ ' : ''}
+                  {lesson.title}
                 </button>
-                {actionError && <p role="alert">{actionError}</p>}
-              </>
-            ) : (
-              <p>No estás inscripto en este curso.</p>
-            )}
-          </>
-        )}
-      </section>
-    </main>
+              </li>
+            ))}
+          </ul>
+        </aside>
+        <section className="card">
+          {selectedLesson && (
+            <>
+              <h1>{selectedLesson.title}</h1>
+              {selectedLesson.videoUrl && (
+                <video src={selectedLesson.videoUrl} controls style={{ width: '100%' }} />
+              )}
+              {selectedLesson.textContent && <p>{selectedLesson.textContent}</p>}
+              {isEnrolled ? (
+                <>
+                  <button className="btn btn-primary" onClick={() => markComplete(selectedLesson.id)}>
+                    Marcar como completada
+                  </button>
+                  {actionError && (
+                    <p className="alert alert-error" role="alert">
+                      {actionError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p>No estás inscripto en este curso.</p>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
