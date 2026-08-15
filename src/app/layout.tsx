@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/lib/auth/AuthProvider'
+import './globals.css'
 
 export const metadata = {
   title: 'LMS SaaS',

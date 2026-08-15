@@ -1,0 +1,291 @@
+:root {
+  --color-accent: #4361ff;
+  --color-ink: #111111;
+  --color-surface: #ffffff;
+  --color-bg-app: #f5f5f0;
+  --color-danger: #d1293d;
+  --border-thin: 2px solid var(--color-ink);
+  --border-thick: 3px solid var(--color-ink);
+  --shadow-offset: 7px 7px 0 var(--color-ink);
+  --shadow-offset-sm: 4px 4px 0 var(--color-ink);
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--color-ink);
+  background: var(--color-bg-app);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+a {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Hero page shell (public, unauthenticated) */
+.page-hero {
+  min-height: 100vh;
+  background: var(--color-accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 24px;
+}
+
+.page-hero-title {
+  color: #fff;
+  text-align: center;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-size: 28px;
+  margin: 0;
+}
+
+.page-hero .card {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* App page shell (authenticated) */
+.page-app {
+  min-height: 100vh;
+}
+
+.page-app-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* Card */
+.card {
+  background: var(--color-surface);
+  border: var(--border-thick);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-offset);
+  padding: 28px;
+}
+
+/* Form elements */
+.field {
+  margin-bottom: 16px;
+  display: block;
+}
+
+.field-label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 12px;
+  border: var(--border-thin);
+  border-radius: 8px;
+  font-size: 15px;
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.input:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 11px 20px;
+  border-radius: 8px;
+  border: var(--border-thin);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-ink);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-offset-sm);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+/* Alerts */
+.alert {
+  border: var(--border-thin);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.alert-error {
+  background: #ffe3e6;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.alert-info {
+  background: #eef6ff;
+  color: var(--color-ink);
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 2px solid var(--color-ink);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #fff;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: var(--border-thick);
+}
+
+.app-header .logo {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: var(--color-ink);
+}
+
+.app-header .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+/* Catalog list */
+.course-list {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.course-card a {
+  font-size: 18px;
+  text-decoration: none;
+  color: var(--color-ink);
+  font-weight: 800;
+}
+
+.course-card p {
+  margin: 6px 0 0;
+  color: #444;
+  font-size: 14px;
+}
+
+/* Embed compact catalog (no header/hero, lives inside a foreign iframe) */
+.embed-list {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+}
+
+.embed-list li {
+  margin-bottom: 10px;
+}
+
+.embed-list a {
+  display: block;
+  padding: 10px 14px;
+  border: 2px solid var(--color-ink);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+/* Lesson viewer layout */
+.lesson-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  align-items: start;
+}
+
+.lesson-sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lesson-sidebar-list button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: var(--border-thin);
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lesson-sidebar-list button.active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .lesson-layout {
+    grid-template-columns: 1fr;
+  }
+}
