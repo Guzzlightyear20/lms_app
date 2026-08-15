@@ -27,10 +27,26 @@ export default function LessonEditorPage({
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [newQuestionOptions, setNewQuestionOptions] = useState(['', '']);
   const [newQuestionCorrect, setNewQuestionCorrect] = useState(0);
+
+  if (!moduleId) {
+    return (
+      <main className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p>Abrí esta lección desde el editor del curso, no directamente por esta URL.</p>
+            <a href={`/panel/cursos/${params.courseId}`} className="btn btn-primary" style={{ marginTop: 12 }}>
+              Volver al curso
+            </a>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   useEffect(() => {
     if (!tenantId || !moduleId) return;
@@ -43,27 +59,32 @@ export default function LessonEditorPage({
   }
 
   async function loadLesson() {
-    const db = getFirebaseFirestore();
-    const lessonSnap = await getDoc(doc(db, lessonPath()));
-    if (lessonSnap.exists()) {
-      const data = lessonSnap.data();
-      setLesson({
-        id: lessonSnap.id,
-        title: data.title,
-        order: data.order,
-        videoUrl: data.videoUrl ?? null,
-        textContent: data.textContent ?? null,
-        attachmentUrls: data.attachmentUrls ?? [],
-      });
-    }
+    try {
+      const db = getFirebaseFirestore();
+      const lessonSnap = await getDoc(doc(db, lessonPath()));
+      if (lessonSnap.exists()) {
+        const data = lessonSnap.data();
+        setLesson({
+          id: lessonSnap.id,
+          title: data.title,
+          order: data.order,
+          videoUrl: data.videoUrl ?? null,
+          textContent: data.textContent ?? null,
+          attachmentUrls: data.attachmentUrls ?? [],
+        });
+      }
 
-    const quizzesSnap = await getDocs(collection(db, `${lessonPath()}/quizzes`));
-    if (!quizzesSnap.empty) {
-      const quizDoc = quizzesSnap.docs[0];
-      const quizData = quizDoc.data();
-      setQuiz({ id: quizDoc.id, lessonId: params.lessonId, questions: quizData.questions ?? [] });
+      const quizzesSnap = await getDocs(collection(db, `${lessonPath()}/quizzes`));
+      if (!quizzesSnap.empty) {
+        const quizDoc = quizzesSnap.docs[0];
+        const quizData = quizDoc.data();
+        setQuiz({ id: quizDoc.id, lessonId: params.lessonId, questions: quizData.questions ?? [] });
+      }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudo cargar la lección');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   function quizDeps(): QuizDeps {
@@ -120,8 +141,13 @@ export default function LessonEditorPage({
 
   async function handleCreateQuiz() {
     if (!tenantId) return;
-    const { id } = await createQuiz(quizDeps(), tenantId, params.courseId, moduleId, params.lessonId);
-    setQuiz({ id, lessonId: params.lessonId, questions: [] });
+    setSaveError(null);
+    try {
+      const { id } = await createQuiz(quizDeps(), tenantId, params.courseId, moduleId, params.lessonId);
+      setQuiz({ id, lessonId: params.lessonId, questions: [] });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'No se pudo crear el quiz');
+    }
   }
 
   async function handleAddQuestion(event: FormEvent) {
@@ -154,25 +180,47 @@ export default function LessonEditorPage({
   }
 
   async function handleDeleteQuestion(index: number) {
+    if (!window.confirm('¿Borrar esta pregunta?')) {
+      return;
+    }
     if (!tenantId || !quiz) return;
-    const updated = await deleteQuestion(
-      quizDeps(),
-      tenantId,
-      params.courseId,
-      moduleId,
-      params.lessonId,
-      quiz.id,
-      quiz.questions,
-      index,
-    );
-    setQuiz({ ...quiz, questions: updated });
+    setSaveError(null);
+    try {
+      const updated = await deleteQuestion(
+        quizDeps(),
+        tenantId,
+        params.courseId,
+        moduleId,
+        params.lessonId,
+        quiz.id,
+        quiz.questions,
+        index,
+      );
+      setQuiz({ ...quiz, questions: updated });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'No se pudo borrar la pregunta');
+    }
   }
 
-  if (loading || !lesson) {
+  if (loading) {
     return (
       <main className="page-app">
         <div className="page-app-content">
           <p>Cargando...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (loadError || !lesson) {
+    return (
+      <main className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p className="alert alert-error" role="alert">
+              {loadError ?? 'No se encontró la lección.'}
+            </p>
+          </div>
         </div>
       </main>
     );

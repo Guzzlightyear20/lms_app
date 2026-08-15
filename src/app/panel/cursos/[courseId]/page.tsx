@@ -5,12 +5,18 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
   collection,
@@ -45,16 +51,24 @@ interface ModuleWithLessons extends Module {
   lessons: Lesson[];
 }
 
-function SortableRow({ id, children }: { id: string; children: ReactNode }) {
+function SortableRow({
+  id,
+  as: Tag = 'div',
+  children,
+}: {
+  id: string;
+  as?: 'div' | 'li';
+  children: ReactNode;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const style = {
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <Tag ref={setNodeRef} style={style} {...attributes} {...listeners}>
       {children}
-    </div>
+    </Tag>
   );
 }
 
@@ -64,10 +78,15 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<ModuleWithLessons[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [newLessonTitles, setNewLessonTitles] = useState<Record<string, string>>({});
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     if (!tenantId) return;
@@ -77,44 +96,49 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
 
   async function loadCourse() {
     if (!tenantId) return;
-    const db = getFirebaseFirestore();
-    const courseSnap = await getDoc(
-      doc(db, `tenants/${tenantId}/courses/${params.courseId}`).withConverter(courseConverter),
-    );
-    if (courseSnap.exists()) {
-      setCourse(courseSnap.data());
-    }
-
-    const modulesSnap = await getDocs(
-      query(collection(db, `tenants/${tenantId}/courses/${params.courseId}/modules`), orderBy('order')),
-    );
-    const loadedModules: ModuleWithLessons[] = [];
-    for (const moduleDoc of modulesSnap.docs) {
-      const data = moduleDoc.data();
-      const lessonsSnap = await getDocs(
-        query(
-          collection(
-            db,
-            `tenants/${tenantId}/courses/${params.courseId}/modules/${moduleDoc.id}/lessons`,
-          ),
-          orderBy('order'),
-        ),
+    try {
+      const db = getFirebaseFirestore();
+      const courseSnap = await getDoc(
+        doc(db, `tenants/${tenantId}/courses/${params.courseId}`).withConverter(courseConverter),
       );
-      const lessons: Lesson[] = lessonsSnap.docs.map((lessonDoc) => {
-        const lessonData = lessonDoc.data();
-        return {
-          id: lessonDoc.id,
-          title: lessonData.title,
-          order: lessonData.order,
-          videoUrl: lessonData.videoUrl ?? null,
-          textContent: lessonData.textContent ?? null,
-          attachmentUrls: lessonData.attachmentUrls ?? [],
-        };
-      });
-      loadedModules.push({ id: moduleDoc.id, title: data.title, order: data.order, lessons });
+      if (courseSnap.exists()) {
+        setCourse(courseSnap.data());
+      }
+
+      const modulesSnap = await getDocs(
+        query(collection(db, `tenants/${tenantId}/courses/${params.courseId}/modules`), orderBy('order')),
+      );
+      const loadedModules: ModuleWithLessons[] = [];
+      for (const moduleDoc of modulesSnap.docs) {
+        const data = moduleDoc.data();
+        const lessonsSnap = await getDocs(
+          query(
+            collection(
+              db,
+              `tenants/${tenantId}/courses/${params.courseId}/modules/${moduleDoc.id}/lessons`,
+            ),
+            orderBy('order'),
+          ),
+        );
+        const lessons: Lesson[] = lessonsSnap.docs.map((lessonDoc) => {
+          const lessonData = lessonDoc.data();
+          return {
+            id: lessonDoc.id,
+            title: lessonData.title,
+            order: lessonData.order,
+            videoUrl: lessonData.videoUrl ?? null,
+            textContent: lessonData.textContent ?? null,
+            attachmentUrls: lessonData.attachmentUrls ?? [],
+          };
+        });
+        loadedModules.push({ id: moduleDoc.id, title: data.title, order: data.order, lessons });
+      }
+      setModules(loadedModules);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudo cargar el curso');
+    } finally {
+      setLoading(false);
     }
-    setModules(loadedModules);
-    setLoading(false);
   }
 
   function moduleDeps(): ModuleDeps {
@@ -171,36 +195,55 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
   async function handleAddModule(event: FormEvent) {
     event.preventDefault();
     if (!tenantId || !newModuleTitle.trim()) return;
-    const { id } = await createModule(moduleDeps(), tenantId, params.courseId, {
-      title: newModuleTitle,
-      order: modules.length,
-    });
-    setModules([...modules, { id, title: newModuleTitle.trim(), order: modules.length, lessons: [] }]);
-    setNewModuleTitle('');
+    setActionError(null);
+    try {
+      const nextOrder = modules.length === 0 ? 0 : Math.max(...modules.map((m) => m.order)) + 1;
+      const { id } = await createModule(moduleDeps(), tenantId, params.courseId, {
+        title: newModuleTitle,
+        order: nextOrder,
+      });
+      setModules([...modules, { id, title: newModuleTitle.trim(), order: nextOrder, lessons: [] }]);
+      setNewModuleTitle('');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleDeleteModule(moduleId: string) {
+    if (!window.confirm('¿Borrar este módulo y todas sus lecciones? Esta acción no se puede deshacer.')) {
+      return;
+    }
     if (!tenantId) return;
-    await deleteModule(moduleDeps(), tenantId, params.courseId, moduleId);
-    setModules(modules.filter((m) => m.id !== moduleId));
+    setActionError(null);
+    try {
+      await deleteModule(moduleDeps(), tenantId, params.courseId, moduleId);
+      setModules(modules.filter((m) => m.id !== moduleId));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleModuleDragEnd(event: DragEndEvent) {
     if (!tenantId) return;
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const fromIndex = modules.findIndex((m) => m.id === active.id);
-    const toIndex = modules.findIndex((m) => m.id === over.id);
-    if (fromIndex === -1 || toIndex === -1) return;
-    const reordered = await reorderModules(
-      moduleDeps(),
-      tenantId,
-      params.courseId,
-      modules,
-      fromIndex,
-      toIndex,
-    );
-    setModules(reordered as ModuleWithLessons[]);
+    setActionError(null);
+    try {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const fromIndex = modules.findIndex((m) => m.id === active.id);
+      const toIndex = modules.findIndex((m) => m.id === over.id);
+      if (fromIndex === -1 || toIndex === -1) return;
+      const reordered = await reorderModules(
+        moduleDeps(),
+        tenantId,
+        params.courseId,
+        modules,
+        fromIndex,
+        toIndex,
+      );
+      setModules(reordered as ModuleWithLessons[]);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleAddLesson(moduleId: string) {
@@ -209,87 +252,128 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
     if (!title || !title.trim()) return;
     const targetModule = modules.find((m) => m.id === moduleId);
     if (!targetModule) return;
-    const { id } = await createLesson(lessonDeps(), tenantId, params.courseId, moduleId, {
-      title,
-      order: targetModule.lessons.length,
-    });
-    setModules(
-      modules.map((m) =>
-        m.id === moduleId
-          ? {
-              ...m,
-              lessons: [
-                ...m.lessons,
-                {
-                  id,
-                  title: title.trim(),
-                  order: m.lessons.length,
-                  videoUrl: null,
-                  textContent: null,
-                  attachmentUrls: [],
-                },
-              ],
-            }
-          : m,
-      ),
-    );
-    setNewLessonTitles({ ...newLessonTitles, [moduleId]: '' });
+    setActionError(null);
+    try {
+      const nextOrder =
+        targetModule.lessons.length === 0
+          ? 0
+          : Math.max(...targetModule.lessons.map((l) => l.order)) + 1;
+      const { id } = await createLesson(lessonDeps(), tenantId, params.courseId, moduleId, {
+        title,
+        order: nextOrder,
+      });
+      setModules(
+        modules.map((m) =>
+          m.id === moduleId
+            ? {
+                ...m,
+                lessons: [
+                  ...m.lessons,
+                  {
+                    id,
+                    title: title.trim(),
+                    order: nextOrder,
+                    videoUrl: null,
+                    textContent: null,
+                    attachmentUrls: [],
+                  },
+                ],
+              }
+            : m,
+        ),
+      );
+      setNewLessonTitles({ ...newLessonTitles, [moduleId]: '' });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleDeleteLesson(moduleId: string, lessonId: string) {
+    if (!window.confirm('¿Borrar esta lección? Esta acción no se puede deshacer.')) {
+      return;
+    }
     if (!tenantId) return;
-    await deleteLesson(lessonDeps(), tenantId, params.courseId, moduleId, lessonId);
-    setModules(
-      modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m,
-      ),
-    );
+    setActionError(null);
+    try {
+      await deleteLesson(lessonDeps(), tenantId, params.courseId, moduleId, lessonId);
+      setModules(
+        modules.map((m) =>
+          m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m,
+        ),
+      );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleLessonDragEnd(moduleId: string, event: DragEndEvent) {
     if (!tenantId) return;
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const targetModule = modules.find((m) => m.id === moduleId);
-    if (!targetModule) return;
-    const fromIndex = targetModule.lessons.findIndex((l) => l.id === active.id);
-    const toIndex = targetModule.lessons.findIndex((l) => l.id === over.id);
-    if (fromIndex === -1 || toIndex === -1) return;
-    const reordered = await reorderLessons(
-      lessonDeps(),
-      tenantId,
-      params.courseId,
-      moduleId,
-      targetModule.lessons,
-      fromIndex,
-      toIndex,
-    );
-    setModules(modules.map((m) => (m.id === moduleId ? { ...m, lessons: reordered } : m)));
+    setActionError(null);
+    try {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const targetModule = modules.find((m) => m.id === moduleId);
+      if (!targetModule) return;
+      const fromIndex = targetModule.lessons.findIndex((l) => l.id === active.id);
+      const toIndex = targetModule.lessons.findIndex((l) => l.id === over.id);
+      if (fromIndex === -1 || toIndex === -1) return;
+      const reordered = await reorderLessons(
+        lessonDeps(),
+        tenantId,
+        params.courseId,
+        moduleId,
+        targetModule.lessons,
+        fromIndex,
+        toIndex,
+      );
+      setModules(modules.map((m) => (m.id === moduleId ? { ...m, lessons: reordered } : m)));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
   async function handleSaveCourseMeta(event: FormEvent) {
     event.preventDefault();
     if (!tenantId || !course) return;
-    const deps: CourseDeps = {
-      createCourseDoc: async () => '',
-      updateCourseDoc: async (tId, courseId, updates) => {
-        const db = getFirebaseFirestore();
-        await setDoc(doc(db, `tenants/${tId}/courses/${courseId}`), updates, { merge: true });
-      },
-      deleteCourseDoc: async () => {},
-    };
-    await updateCourse(deps, tenantId, params.courseId, {
-      title: course.title,
-      description: course.description,
-      published: course.published,
-    });
+    setActionError(null);
+    try {
+      const deps: CourseDeps = {
+        createCourseDoc: async () => '',
+        updateCourseDoc: async (tId, courseId, updates) => {
+          const db = getFirebaseFirestore();
+          await setDoc(doc(db, `tenants/${tId}/courses/${courseId}`), updates, { merge: true });
+        },
+        deleteCourseDoc: async () => {},
+      };
+      await updateCourse(deps, tenantId, params.courseId, {
+        title: course.title,
+        description: course.description,
+        published: course.published,
+      });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo completar la acción');
+    }
   }
 
-  if (loading || !course) {
+  if (loading) {
     return (
       <main className="page-app">
         <div className="page-app-content">
           <p>Cargando...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (loadError || !course) {
+    return (
+      <main className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p className="alert alert-error" role="alert">
+              {loadError ?? 'No se encontró el curso.'}
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -353,8 +437,15 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
                   >
                     <ul className="lesson-sidebar-list">
                       {moduleItem.lessons.map((lesson) => (
-                        <SortableRow key={lesson.id} id={lesson.id}>
-                          <li style={{ display: 'flex', justifyContent: 'space-between', cursor: 'grab' }}>
+                        <SortableRow key={lesson.id} id={lesson.id} as="li">
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              cursor: 'grab',
+                            }}
+                          >
                             <a
                               href={`/panel/cursos/${params.courseId}/lecciones/${lesson.id}?moduleId=${moduleItem.id}`}
                             >
@@ -369,7 +460,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
                             >
                               Borrar
                             </button>
-                          </li>
+                          </div>
                         </SortableRow>
                       ))}
                     </ul>
@@ -412,6 +503,12 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
             </button>
           </form>
         </div>
+
+        {actionError && (
+          <p className="alert alert-error" role="alert" style={{ marginTop: 16 }}>
+            {actionError}
+          </p>
+        )}
       </div>
     </main>
   );
