@@ -27,7 +27,7 @@ export default function InscribirPage() {
   }
 
   return (
-    <div className="page-app">
+    <main className="page-app">
       <div className="page-app-content">
         <div className="card">
           <h1>Inscribir alumno</h1>
@@ -66,6 +66,6 @@ export default function InscribirPage() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

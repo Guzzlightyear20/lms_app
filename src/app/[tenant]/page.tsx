@@ -15,9 +15,9 @@ export default async function TenantCatalogPage({
   const courses = snapshot.docs.map((d) => d.data());
 
   return (
-    <div className="page-hero">
+    <main className="page-hero">
       <p className="page-hero-title">LMS SaaS</p>
-      <div className="card" style={{ maxWidth: 560 }}>
+      <div className="card card--wide">
         <h1>Cursos disponibles</h1>
         <ul className="course-list">
           {courses.map((course) => (
@@ -29,6 +29,6 @@ export default async function TenantCatalogPage({
         </ul>
         {courses.length === 0 && <p>Todavía no hay cursos publicados.</p>}
       </div>
-    </div>
+    </main>
   );
 }

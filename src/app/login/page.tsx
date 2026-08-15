@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="page-hero">
+    <main className="page-hero">
       <p className="page-hero-title">LMS SaaS</p>
       <div className="card">
         <h1>Iniciar sesión</h1>
@@ -71,6 +71,6 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

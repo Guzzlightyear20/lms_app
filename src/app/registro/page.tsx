@@ -28,7 +28,7 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="page-hero">
+    <main className="page-hero">
       <p className="page-hero-title">LMS SaaS</p>
       <div className="card">
         <h1>Crear cuenta</h1>
@@ -69,6 +69,6 @@ export default function RegistroPage() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

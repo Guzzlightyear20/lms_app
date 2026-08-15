@@ -1,13 +1,14 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthProvider';
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, claims, signOut } = useAuth();
 
-  if (!user || pathname?.startsWith('/embed')) {
+  if (!user || pathname === '/embed' || pathname?.startsWith('/embed/')) {
     return null;
   }
 
@@ -17,9 +18,15 @@ export function Header() {
         LMS SaaS
       </a>
       <div className="user-info">
-        <span>{user.email}</span>
+        <span className="user-email">{user.email}</span>
         {claims?.role && <span className="badge">{claims.role}</span>}
-        <button className="btn btn-secondary" onClick={() => signOut()}>
+        <button
+          className="btn btn-secondary"
+          onClick={async () => {
+            await signOut();
+            router.push('/login');
+          }}
+        >
           Cerrar sesión
         </button>
       </div>

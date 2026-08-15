@@ -17,7 +17,7 @@ export default function IntegrarPage({
   });
 
   return (
-    <div className="page-app">
+    <main className="page-app">
       <div className="page-app-content">
         <div className="card">
           <h1>Integrar en mi web</h1>
@@ -41,6 +41,6 @@ export default function IntegrarPage({
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

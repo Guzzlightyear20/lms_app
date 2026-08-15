@@ -116,17 +116,17 @@ export default function CursoPage({
 
   if (authLoading) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <p>Cargando...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!user) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <div className="card">
             <p>Tenés que iniciar sesión para ver este curso.</p>
@@ -135,35 +135,35 @@ export default function CursoPage({
             </a>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (claims?.role !== 'student' || claims.tenantId !== params.tenant) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <div className="card">
             <p>No tenés acceso a este curso.</p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (dataLoading) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <p>Cargando contenido del curso...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (loadError) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <div className="card">
             <p className="alert alert-error" role="alert">
@@ -171,14 +171,14 @@ export default function CursoPage({
             </p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   const selectedLesson = lessons.find((l) => l.id === selectedLessonId) ?? null;
 
   return (
-    <div className="page-app">
+    <main className="page-app">
       <div className="lesson-layout">
         <aside className="card">
           <ul className="lesson-sidebar-list">
@@ -221,6 +221,6 @@ export default function CursoPage({
           )}
         </section>
       </div>
-    </div>
+    </main>
   );
 }

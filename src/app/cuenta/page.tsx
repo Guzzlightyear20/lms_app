@@ -19,29 +19,29 @@ export default function CuentaPage() {
 
   if (loading) {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <p>Cargando...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (claims?.role === 'student') {
     return (
-      <div className="page-app">
+      <main className="page-app">
         <div className="page-app-content">
           <div className="card">
             <h1>Ya estás inscripto</h1>
             <p>Pedile el link del curso a quien te inscribió.</p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="page-app">
+    <main className="page-app">
       <div className="page-app-content">
         <div className="card">
           <h1>Cuenta creada</h1>
@@ -51,6 +51,6 @@ export default function CuentaPage() {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

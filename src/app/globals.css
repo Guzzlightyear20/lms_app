@@ -19,7 +19,13 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--color-ink);
-  background: var(--color-bg-app);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }
 
 h1,
@@ -38,7 +44,7 @@ a {
 
 /* Hero page shell (public, unauthenticated) */
 .page-hero {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--color-accent);
   display: flex;
   flex-direction: column;
@@ -65,7 +71,8 @@ a {
 
 /* App page shell (authenticated) */
 .page-app {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-bg-app);
 }
 
 .page-app-content {
@@ -132,7 +139,7 @@ a {
 
 .btn-primary {
   background: var(--color-ink);
-  color: var(--color-accent);
+  color: #fff;
   box-shadow: var(--shadow-offset-sm);
 }
 
@@ -158,7 +165,7 @@ a {
 
 .alert-error {
   background: #ffe3e6;
-  color: var(--color-danger);
+  color: #b01e30;
   border-color: var(--color-danger);
 }
 
@@ -184,6 +191,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 14px 24px;
   background: #fff;
   border-bottom: var(--border-thick);
@@ -203,6 +212,13 @@ a {
   align-items: center;
   gap: 12px;
   font-size: 14px;
+}
+
+.app-header .user-info .user-email {
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Catalog list */
