@@ -294,7 +294,7 @@ a {
   gap: 8px;
 }
 
-.lesson-sidebar-list button {
+.lesson-sidebar-list > li > button {
   width: 100%;
   text-align: left;
   padding: 10px 12px;
