@@ -54,7 +54,10 @@ export async function reorderModules(
   fromIndex: number,
   toIndex: number,
 ): Promise<Module[]> {
-  const reordered = reorderItems(modules, fromIndex, toIndex);
+  const reordered = reorderItems(modules, fromIndex, toIndex).map((m, index) => ({
+    ...m,
+    order: index,
+  }));
   await deps.writeModuleOrder(
     tenantId,
     courseId,

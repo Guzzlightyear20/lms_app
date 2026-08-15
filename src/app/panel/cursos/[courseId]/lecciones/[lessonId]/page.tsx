@@ -33,21 +33,6 @@ export default function LessonEditorPage({
   const [newQuestionOptions, setNewQuestionOptions] = useState(['', '']);
   const [newQuestionCorrect, setNewQuestionCorrect] = useState(0);
 
-  if (!moduleId) {
-    return (
-      <main className="page-app">
-        <div className="page-app-content">
-          <div className="card">
-            <p>Abrí esta lección desde el editor del curso, no directamente por esta URL.</p>
-            <a href={`/panel/cursos/${params.courseId}`} className="btn btn-primary" style={{ marginTop: 12 }}>
-              Volver al curso
-            </a>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   useEffect(() => {
     if (!tenantId || !moduleId) return;
     loadLesson();
@@ -200,6 +185,21 @@ export default function LessonEditorPage({
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'No se pudo borrar la pregunta');
     }
+  }
+
+  if (!moduleId) {
+    return (
+      <main className="page-app">
+        <div className="page-app-content">
+          <div className="card">
+            <p>Abrí esta lección desde el editor del curso, no directamente por esta URL.</p>
+            <a href={`/panel/cursos/${params.courseId}`} className="btn btn-primary" style={{ marginTop: 12 }}>
+              Volver al curso
+            </a>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (loading) {

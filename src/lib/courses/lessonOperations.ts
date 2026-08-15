@@ -80,7 +80,10 @@ export async function reorderLessons(
   fromIndex: number,
   toIndex: number,
 ): Promise<Lesson[]> {
-  const reordered = reorderItems(lessons, fromIndex, toIndex);
+  const reordered = reorderItems(lessons, fromIndex, toIndex).map((l, index) => ({
+    ...l,
+    order: index,
+  }));
   await deps.writeLessonOrder(
     tenantId,
     courseId,

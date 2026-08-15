@@ -13,6 +13,7 @@ export default function CursosPage() {
   const tenantId = claims?.tenantId;
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,11 +23,16 @@ export default function CursosPage() {
     if (!tenantId) return;
 
     async function loadCourses() {
-      const db = getFirebaseFirestore();
-      const coursesRef = collection(db, `tenants/${tenantId}/courses`).withConverter(courseConverter);
-      const snapshot = await getDocs(query(coursesRef, orderBy('title')));
-      setCourses(snapshot.docs.map((d) => d.data()));
-      setLoading(false);
+      try {
+        const db = getFirebaseFirestore();
+        const coursesRef = collection(db, `tenants/${tenantId}/courses`).withConverter(courseConverter);
+        const snapshot = await getDocs(query(coursesRef, orderBy('title')));
+        setCourses(snapshot.docs.map((d) => d.data()));
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los cursos');
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadCourses();
@@ -66,6 +72,10 @@ export default function CursosPage() {
           <h1>Mis cursos</h1>
           {loading ? (
             <p>Cargando...</p>
+          ) : loadError ? (
+            <p className="alert alert-error" role="alert">
+              {loadError}
+            </p>
           ) : (
             <ul className="course-list">
               {courses.map((course) => (
@@ -76,7 +86,7 @@ export default function CursosPage() {
               ))}
             </ul>
           )}
-          {!loading && courses.length === 0 && <p>Todavía no creaste ningún curso.</p>}
+          {!loading && !loadError && courses.length === 0 && <p>Todavía no creaste ningún curso.</p>}
         </div>
 
         <div className="card" style={{ marginTop: 16 }}>

@@ -69,4 +69,10 @@ describe('reorderModules', () => {
     expect(result.map((m) => m.id)).toEqual(['m2', 'm3', 'm1']);
     expect(deps.writeModuleOrder).toHaveBeenCalledWith('tenant-a', 'course-1', ['m2', 'm3', 'm1']);
   });
+
+  it('stamps the returned array order fields to match the new positions', async () => {
+    const deps = makeDeps();
+    const result = await reorderModules(deps, 'tenant-a', 'course-1', modules, 0, 2);
+    expect(result.map((m) => m.order)).toEqual([0, 1, 2]);
+  });
 });
