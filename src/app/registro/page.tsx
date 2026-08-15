@@ -28,28 +28,47 @@ export default function RegistroPage() {
   }
 
   return (
-    <main>
-      <h1>Crear cuenta</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Creando...' : 'Crear cuenta'}
-        </button>
-      </form>
-    </main>
+    <div className="page-hero">
+      <p className="page-hero-title">LMS SaaS</p>
+      <div className="card">
+        <h1>Crear cuenta</h1>
+        <form onSubmit={handleSubmit}>
+          <label className="field">
+            <span className="field-label">Email</span>
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">Contraseña</span>
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </label>
+          {error && (
+            <p className="alert alert-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={submitting}
+            style={{ marginTop: 8 }}
+          >
+            {submitting ? 'Creando...' : 'Crear cuenta'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
