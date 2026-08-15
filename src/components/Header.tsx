@@ -18,6 +18,11 @@ export function Header() {
         LMS SaaS
       </a>
       <div className="user-info">
+        {(claims?.role === 'owner' || claims?.role === 'instructor') && (
+          <a href="/panel/cursos" className="btn btn-secondary">
+            Mis cursos
+          </a>
+        )}
         <span className="user-email">{user.email}</span>
         {claims?.role && <span className="badge">{claims.role}</span>}
         <button
