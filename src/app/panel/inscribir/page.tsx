@@ -27,22 +27,45 @@ export default function InscribirPage() {
   }
 
   return (
-    <main>
-      <h1>Inscribir alumno</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email del alumno
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          ID del curso
-          <input type="text" value={courseId} onChange={(e) => setCourseId(e.target.value)} required />
-        </label>
-        <button type="submit" disabled={status === 'submitting'}>
-          {status === 'submitting' ? 'Inscribiendo...' : 'Inscribir'}
-        </button>
-      </form>
-      {message && <p role="status">{message}</p>}
-    </main>
+    <div className="page-app">
+      <div className="page-app-content">
+        <div className="card">
+          <h1>Inscribir alumno</h1>
+          <form onSubmit={handleSubmit}>
+            <label className="field">
+              <span className="field-label">Email del alumno</span>
+              <input
+                className="input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">ID del curso</span>
+              <input
+                className="input"
+                type="text"
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" className="btn btn-primary" disabled={status === 'submitting'}>
+              {status === 'submitting' ? 'Inscribiendo...' : 'Inscribir'}
+            </button>
+          </form>
+          {message && (
+            <p
+              className={`alert ${status === 'error' ? 'alert-error' : 'alert-info'}`}
+              role="status"
+            >
+              {message}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -17,18 +17,30 @@ export default function IntegrarPage({
   });
 
   return (
-    <main>
-      <h1>Integrar en mi web</h1>
-      <p>Copia este codigo y pegalo en la pagina de tu sitio donde quieras mostrar los cursos:</p>
-      <textarea readOnly value={snippet} rows={3} style={{ width: '100%' }} />
-      <button
-        onClick={() => {
-          navigator.clipboard.writeText(snippet);
-          setCopied(true);
-        }}
-      >
-        {copied ? 'Copiado' : 'Copiar codigo'}
-      </button>
-    </main>
+    <div className="page-app">
+      <div className="page-app-content">
+        <div className="card">
+          <h1>Integrar en mi web</h1>
+          <p>Copiá este código y pegalo en la página de tu sitio donde quieras mostrar los cursos:</p>
+          <textarea
+            readOnly
+            value={snippet}
+            rows={3}
+            className="input"
+            style={{ fontFamily: 'monospace', resize: 'vertical' }}
+          />
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: 12 }}
+            onClick={() => {
+              navigator.clipboard.writeText(snippet);
+              setCopied(true);
+            }}
+          >
+            {copied ? 'Copiado' : 'Copiar código'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
