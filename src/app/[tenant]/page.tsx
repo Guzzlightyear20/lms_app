@@ -15,16 +15,20 @@ export default async function TenantCatalogPage({
   const courses = snapshot.docs.map((d) => d.data());
 
   return (
-    <main>
-      <h1>Cursos disponibles</h1>
-      <ul>
-        {courses.map((course) => (
-          <li key={course.id}>
-            <a href={`/${params.tenant}/cursos/${course.id}`}>{course.title}</a>
-            <p>{course.description}</p>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <div className="page-hero">
+      <p className="page-hero-title">LMS SaaS</p>
+      <div className="card" style={{ maxWidth: 560 }}>
+        <h1>Cursos disponibles</h1>
+        <ul className="course-list">
+          {courses.map((course) => (
+            <li key={course.id} className="course-card">
+              <a href={`/${params.tenant}/cursos/${course.id}`}>{course.title}</a>
+              <p>{course.description}</p>
+            </li>
+          ))}
+        </ul>
+        {courses.length === 0 && <p>Todavía no hay cursos publicados.</p>}
+      </div>
+    </div>
   );
 }
