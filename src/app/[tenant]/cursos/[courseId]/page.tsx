@@ -34,8 +34,11 @@ export default function CursoPage({
   const [actionError, setActionError] = useState<string | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
 
+  const canView =
+    claims?.role === 'student' || claims?.role === 'owner' || claims?.role === 'instructor';
+
   useEffect(() => {
-    if (authLoading || !user || claims?.role !== 'student' || claims.tenantId !== params.tenant) {
+    if (authLoading || !user || !canView || claims?.tenantId !== params.tenant) {
       return;
     }
 
@@ -139,7 +142,7 @@ export default function CursoPage({
     );
   }
 
-  if (claims?.role !== 'student' || claims.tenantId !== params.tenant) {
+  if (!canView || claims?.tenantId !== params.tenant) {
     return (
       <main className="page-app">
         <div className="page-app-content">

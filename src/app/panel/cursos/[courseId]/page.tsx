@@ -387,7 +387,17 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
     <main className="page-app">
       <div className="page-app-content">
         <div className="card">
-          <h1>Editar curso</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1>Editar curso</h1>
+            <a
+              href={`/${tenantId}/cursos/${params.courseId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-secondary"
+            >
+              Ver como alumno
+            </a>
+          </div>
           <form onSubmit={handleSaveCourseMeta}>
             <label className="field">
               <span className="field-label">Título</span>
