@@ -444,7 +444,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
                     items={moduleItem.lessons.map((l) => l.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <ul className="lesson-sidebar-list">
+                    <ul className="lesson-sidebar-list" style={{ marginTop: 12 }}>
                       {moduleItem.lessons.map((lesson) => (
                         <SortableRow key={lesson.id} id={lesson.id} as="li">
                           <div
@@ -481,6 +481,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
                     e.preventDefault();
                     handleAddLesson(moduleItem.id);
                   }}
+                  style={{ marginTop: 12 }}
                 >
                   <input
                     className="input"
@@ -489,6 +490,7 @@ export default function CourseEditorPage({ params }: { params: { courseId: strin
                     onChange={(e) =>
                       setNewLessonTitles({ ...newLessonTitles, [moduleItem.id]: e.target.value })
                     }
+                    style={{ marginBottom: 8 }}
                   />
                   <button type="submit" className="btn btn-secondary">
                     + Lección
