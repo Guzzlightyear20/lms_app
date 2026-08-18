@@ -3,6 +3,7 @@ import { assignEnrollment } from './assignEnrollment';
 
 function makeDeps(overrides: Partial<{
   getUserByEmail: ReturnType<typeof vi.fn>;
+  courseExists: ReturnType<typeof vi.fn>;
   setCustomUserClaims: ReturnType<typeof vi.fn>;
   progressExists: ReturnType<typeof vi.fn>;
   createProgress: ReturnType<typeof vi.fn>;
@@ -14,6 +15,7 @@ function makeDeps(overrides: Partial<{
       displayName: 'Alumno Uno',
       existingClaims: null,
     }),
+    courseExists: vi.fn().mockResolvedValue(true),
     setCustomUserClaims: vi.fn().mockResolvedValue(undefined),
     progressExists: vi.fn().mockResolvedValue(false),
     createProgress: vi.fn().mockResolvedValue(undefined),
@@ -55,6 +57,21 @@ describe('assignEnrollment', () => {
       displayName: 'Alumno Uno',
     });
     expect(result).toEqual({ success: true, studentUid: 'student-uid-1' });
+  });
+
+  it('rejects enrollment when the course does not exist', async () => {
+    const deps = makeDeps({ courseExists: vi.fn().mockResolvedValue(false) });
+
+    await expect(
+      assignEnrollment(deps, {
+        callerClaims: { tenantId: 'tenant-a', role: 'owner' },
+        email: 'alumno@example.com',
+        courseId: 'nonexistent-course',
+      }),
+    ).rejects.toThrow('course not found');
+
+    expect(deps.setCustomUserClaims).not.toHaveBeenCalled();
+    expect(deps.createProgress).not.toHaveBeenCalled();
   });
 
   it('allows an instructor (not just an owner) to enroll a student', async () => {

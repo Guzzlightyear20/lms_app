@@ -40,6 +40,10 @@ export const enrollStudent = functionsV1.onCall(async (data, context) => {
             existingClaims: (userRecord.customClaims as { tenantId?: string; role?: Role } | undefined) ?? null,
           };
         },
+        courseExists: async (tenantId, courseId) => {
+          const snap = await db.doc(`tenants/${tenantId}/courses/${courseId}`).get();
+          return snap.exists;
+        },
         setCustomUserClaims: (uid, claims) => auth.setCustomUserClaims(uid, claims),
         progressExists: async (tenantId, uid, courseId) => {
           const snap = await db
@@ -72,6 +76,9 @@ export const enrollStudent = functionsV1.onCall(async (data, context) => {
         'not-found',
         'No existe una cuenta con ese email. El alumno debe registrarse primero.',
       );
+    }
+    if (err instanceof Error && err.message === 'course not found') {
+      throw new functionsV1.HttpsError('not-found', 'El curso seleccionado no existe.');
     }
     if (err instanceof Error) {
       throw new functionsV1.HttpsError('failed-precondition', err.message);

@@ -7,6 +7,7 @@ export interface EnrollDeps {
     displayName: string | null;
     existingClaims: { tenantId?: string; role?: Role } | null;
   }>;
+  courseExists: (tenantId: string, courseId: string) => Promise<boolean>;
   setCustomUserClaims: (uid: string, claims: { tenantId: string; role: Role }) => Promise<void>;
   progressExists: (tenantId: string, uid: string, courseId: string) => Promise<boolean>;
   createProgress: (
@@ -38,6 +39,11 @@ export async function assignEnrollment(
   }
   if (student.existingClaims?.tenantId && student.existingClaims.tenantId !== input.callerClaims.tenantId) {
     throw new Error('target user belongs to a different tenant');
+  }
+
+  const courseExists = await deps.courseExists(input.callerClaims.tenantId, input.courseId);
+  if (!courseExists) {
+    throw new Error('course not found');
   }
 
   const alreadyHasCorrectClaims =
